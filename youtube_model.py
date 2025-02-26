@@ -1,7 +1,7 @@
 import os
 import google.generativeai as genai
 from youtube_transcript_api import YouTubeTranscriptApi
-import json
+
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
@@ -29,35 +29,27 @@ class YouTubeModel:
 
     # Gemini 사용하여 텍스트 요약
     def summarize_text_with_gemini(self, text):
-        
+
         response = self.model.generate_content(
-            f"다음 유튜브 영상의 내용을 여행 장소 중심으로 요약해줘. "
+            f"다음 유튜브 영상의 내용과 영상 설명에 대해서 여행 장소 중심으로 요약해줘. "
             f"관광지나 상호명이 올바르게 나왔으면 좋겠어. "
             f"장소마다 특징을 한 줄로 정리해서 같이 설명해줘. "
-            f"상호명이 없는 장소는 제외하고 알려줘. :\n\n{text}"
+            f"상호명이 없는 장소는 제외하고 알려줘. " 
+            f"주소 데이터가 같이 있는 경우에 주소 데이터는 제외하고 알려줘. :\n\n{text}"
         )
-        
+    
         return response.text
+    
+    def process_youtube_summary(self, url):
+        # 비디오 ID 추출 및 자막 가져오기
+        video_id = self.get_video_id(url)
+        if not video_id:
+            return {"error" : "올바른 유튜브 URL을 입력하세요."}
 
+        transcript_text = self.get_youtube_transcript(video_id)
+        if "자막을 가져오는 데 실패했습니다" in transcript_text:
+            return {"error": transcript_text}
 
-# 클래스 호출
-yt_model = YouTubeModel()
-
-# 유튜브 URL 입력
-youtube_url = input("유튜브 URL을 입력하세요: ")
-
-# 비디오 ID 추출 및 자막 가져오기
-video_id = yt_model.get_video_id(youtube_url)
-if not video_id:
-    print("올바른 유튜브 URL을 입력하세요.")
-else:
-    transcript_text = yt_model.get_youtube_transcript(video_id)
-
-    if "자막을 가져오는 데 실패했습니다" not in transcript_text:
-        # Gemini API로 요약
-        summary = yt_model.summarize_text_with_gemini(transcript_text)
-        print("\n📌 유튜브 영상 요약 📌\n")
-        print(summary)
-    else:
-        print(transcript_text)
+        summary = self.summarize_text_with_gemini(transcript_text)
+        return {"summary": summary}
 
