@@ -96,23 +96,23 @@ def process_youtube_url(youtube_url: str):
             # print(json_data)
 
 
-@app.post("/process-url")
-def process_url(request: UrlRequest):
+@app.get("/process-url")
+def process_url(url: str):
     """
-    요청 { "url": "string" }
+    GET 요청 쿼리 파라미터로 { "url": "string" } 전달.
     응답: JSON 배열 - 각 항목 { "id", "category", "place_name", "summary" }
     """
-    records = process_youtube_url(request.url)
+    records = process_youtube_url(url)
     return records
 
-@app.post("/api/recommend")
-def recommend(request: UrlRequest):
+@app.get("/api/recommend")
+def recommend(url: str):
     """
-    요청 { "url": "string" }
+    GET 요청 쿼리 파라미터로 { "url": "string" } 전달.
     응답: { "days": integer, "places": [ { "id", "category", "place_name", "summary" } ] }
     여기서는 days 값을 예시로 3으로 설정했습니다.
     """
-    records = process_youtube_url(request.url)
+    records = process_youtube_url(url)
     response = {
         "days": 3,
         "places": records
