@@ -1,3 +1,7 @@
+# 이후에 다른 라이브러리들을 임포트합니다.
+import json
+import re
+import google.generativeai as genai
 from youtube_model import YouTubeModel
 from crowler import get_youtube_data
 
@@ -9,12 +13,12 @@ youtube_data = get_youtube_data(youtube_url)
 title = youtube_data.get("title", "제목 없음")
 video_detail = youtube_data.get("video_detail", "설명 없음")
 
-print(f"\n📌 영상 제목: {youtube_data['title']}")
+# print(f"\n📌 영상 제목: {youtube_data['title']}")
 # print(f"📝 설명: {youtube_data['video_detail']}\n\n")
 
 # Gemini API를 이용한 영상 요약
 yt_model = YouTubeModel()   # 클래스 호출 
-video_id = yt_model.get_video_id(youtube_url)
+video_id = yt_model.get_video_id(youtube_url) 
 
 if not video_id:
     print("❌ 올바른 유튜브 URL을 입력하세요.")
@@ -46,8 +50,40 @@ else:
         final_summary = yt_model.summarize_text_with_gemini(combined_text)
 
         # 최종 요약 출력
-        print("\n📌 유튜브 영상 최종 요약 📌\n")
-        print(final_summary)
+        #print("\n📌 유튜브 영상 최종 요약 📌\n")
+        #print(final_summary)
+
+        # 결과를 저장할 딕셔너리 초기화
+        records = []
+        current_category = None
+        id_counter = 1
+
+        # 각 줄을 순회하면서 데이터 파싱
+        for line in final_summary.strip().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+
+            # 카테고리 라인: '!'로 시작
+            if line.startswith("!"):
+                current_category = line[1:].strip()
+            # 데이터 항목 라인: '@'로 시작하며 '$'로 구분
+            elif line.startswith("@"):
+                if "$" in line:
+                    parts = line[1:].split("$", 1)
+                    place_name = parts[0].strip()
+                    summary = parts[1].strip()
+                    records.append({
+                        "id": id_counter,
+                        "category": current_category,
+                        "place_name": place_name,
+                        "summary": summary
+                    })
+                    id_counter += 1
+
+        # JSON으로 변환 (한글 깨짐 방지)
+        json_data = json.dumps(records, ensure_ascii=False, indent=4)
+        print(json_data)
 
 
 # # 결과 출력
