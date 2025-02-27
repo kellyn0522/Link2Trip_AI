@@ -65,6 +65,7 @@ def generate_initial_schedule(data):
     - 반드시 `{days}일` 일정이 포함되어야 함.
     - 장소는 아래 JSON 데이터에서만 선택해야 함.
     - 하루에 `{places_per_day}~{places_per_day + (1 if extra_places > 0 else 0)}`개의 장소가 포함되어야 함.
+    - {places}에서 summary를 고려해서 위치를 약간 변경해줘.
     - JSON 데이터의 category를 참고하여, 일정에 맞게 배치할 것.
     - 점심과 저녁에는 반드시 "음식점" 카테고리에서 선택.
     - 오후 일정에는 "관광지" 1개 이상, "카페/디저트" 1개 이상 포함해야 함.
