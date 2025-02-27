@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 # chromedriver 133.x 버전 다운로드 및 설치 (리눅스용)
 RUN wget https://storage.googleapis.com/chrome-for-testing-public/133.0.6943.141/linux64/chromedriver-linux64.zip -O /tmp/chromedriver.zip && \
     unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
-    rm /tmp/chromedriver.zip
+    rm /tmp/chromedriver.zip 
 
 # chromedriver 경로 수정: 압축 해제된 chromedriver를 /usr/local/bin/으로 이동
 RUN mv /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver && \

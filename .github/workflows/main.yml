@@ -34,7 +34,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t flask-app .
+          docker build --no-cache -t flask-app .
 
       - name: Push Docker image to DockerHub
         run: |
