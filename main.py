@@ -102,6 +102,7 @@ async def process_url(url: str):#payload: URLRequest
     # records = process_youtube_url(payload.url)
     # return records
     records = process_youtube_url(url)
+    print(records)
     return records
 
 
@@ -141,7 +142,8 @@ async def recommend(days: int, places: str): # trip_data: TripData
     parsed_schedule = trip_model.parse_llm_schedule(initial_schedule)
     optimized_schedule = trip_model.optimize_schedule_with_distance(parsed_schedule, places_objects)
     final_data = trip_model.convert_to_join(optimized_schedule)
-
+    
+    print(final_data)
     return final_data  # ✅ 기존 코드와 동일한 결과 반환
     # input_data = trip_data.model_dump()
 
@@ -159,7 +161,24 @@ async def recommend(days: int, places: str): # trip_data: TripData
     # # 최종 일정 데이터를 JSON 문자열로 변환 후 반환
     # final_data = trip_model.convert_to_join(optimized_schedule)
     # return final_data
-    
+
+@app.post("/api/recommend")
+async def recommend_post(body: dict):
+    days = body.get("days")
+    places_list = body.get("places", [])
+    places_objects = [Place(**place) for place in places_list]
+
+    input_data = {
+        "days": days,
+        "places": places_objects
+    }
+
+    initial_schedule = trip_model.generate_initial_schedule(input_data)
+    parsed_schedule = trip_model.parse_llm_schedule(initial_schedule)
+    optimized_schedule = trip_model.optimize_schedule_with_distance(parsed_schedule, places_objects)
+    final_data = trip_model.convert_to_join(optimized_schedule)
+    print(final_data)
+    return json.loads(final_data)
 
 @app.get("/")
 async def root():
@@ -168,7 +187,6 @@ async def root():
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
 
 
 

@@ -113,6 +113,7 @@ class TripModel:
 
             # 출발점 설정 (첫 번째 장소 기준)
             start_place = place_dict[day_schedule[0]["place_name"]]
+            # print(place_dict)
             remaining_places = [place_dict[p["place_name"]] for p in day_schedule[1:]]
 
             # 최적화된 경로 찾기 (최소 거리 경로 선택)
@@ -204,7 +205,6 @@ class TripModel:
             })
 
         json_data = json.dumps(records, ensure_ascii=False, indent=4)
-        print(json_data)
         return json_data
 
 
