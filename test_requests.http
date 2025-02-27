@@ -9,7 +9,7 @@ Content-Type: application/json
 GET https://nbhz63dw-8000.asse.devtunnels.ms/process-url?url=https://www.youtube.com/watch?v=R4AlFMAgDz0
 
 ### 배포 테스트 2
-GET http://localhost:8000/api/recommend?days=1&places=[{"id":1,"category":"음식점","place_name":"이츠모라멘","summary":"라멘 맛집","latitude":37.784818013,"longitude":128.916060875},{"id":2,"category":"음식점","place_name":"초당찰떡","summary":"찹쌀떡, 구운찰떡 판매, 네이버 예약 가능, 선물용으로 좋음","latitude":37.791413406,"longitude":128.914894149}]
+GET https://nbhz63dw-8000.asse.devtunnels.ms/api/recommend?days=1&places=[{"id":1,"category":"음식점","place_name":"이츠모라멘","summary":"라멘 맛집","latitude":37.784818013,"longitude":128.916060875},{"id":2,"category":"음식점","place_name":"초당찰떡","summary":"찹쌀떡, 구운찰떡 판매, 네이버 예약 가능, 선물용으로 좋음","latitude":37.791413406,"longitude":128.914894149}]
 ###
 GET http://localhost:8000/process-url
 Content-Type: application/json
