@@ -29,41 +29,7 @@ def haversine(lat1, lon1, lat2, lon2):
     
     return R * c
 
-# LLM을 활용한 여행 일정 추천
-def generate_initial_schedule(data):
-    days = data["days"]
-    places = data["places"]
 
-    import os
-import json
-import google.generativeai as genai
-from math import radians, sin, cos, sqrt, atan2
-from itertools import permutations
-
-# Gemini API 설정
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-pro")
-
-# JSON 파일 불러오기
-def load_trip_data(filename="trip_data.json"):
-    with open(filename, "r", encoding="utf-8") as file:
-        data = json.load(file)
-    return data
-
-# Haversine 공식: 두 위도/경도 좌표 간 거리 계산 (단위: km)
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  # 지구 반지름 (km)
-    
-    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
-    
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    
-    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    
-    return R * c
 
 # LLM을 활용한 여행 일정 추천
 def generate_initial_schedule(data):
