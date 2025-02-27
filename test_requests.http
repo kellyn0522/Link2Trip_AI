@@ -1,0 +1,7 @@
+### Test /process-url endpoint using GET
+GET http://localhost:8000/process-url?url=https://www.youtube.com/watch?v=R4AlFMAgDz0 HTTP/1.1
+Content-Type: application/json
+
+### Test /api/recommend endpoint using GET
+GET http://localhost:8000/api/recommend?url=https://www.youtube.com/watch?v=your_video_id HTTP/1.1
+Content-Type: application/json
