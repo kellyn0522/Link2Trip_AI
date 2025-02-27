@@ -6,14 +6,12 @@ from pydantic import BaseModel
 from youtube_model import YouTubeModel
 from crowler import get_youtube_data
 from fastapi import FastAPI, HTTPException
+from typing import List
+from trip_model import TripModel
 
 app = FastAPI()
+trip_model = TripModel()
 
-# 유튜브 URL 입력
-# youtube_url = input("유튜브 URL을 입력하세요: ")
-
-class UrlRequest(BaseModel):
-    url: str
 
 def process_youtube_url(youtube_url: str):
 
@@ -35,89 +33,137 @@ def process_youtube_url(youtube_url: str):
         transcript_text = yt_model.get_youtube_transcript(video_id)
 
         if "자막을 가져오는 데 실패했습니다" in transcript_text:
-            print(f"❌ 오류: {transcript_text}")
-        else:
-            # 크롤링 데이터 + 자막 원문을 합쳐서 LLM에게 전달
-            combined_text = f"""
-            아래는 유튜브 영상의 정보야. 영상 설명과 자막 원문을 분석해서 여행 장소 중심으로 요약해줘.
+            trinscript_text = ""
 
-            [유튜브 영상 제목]
-            {title}
+        # 크롤링 데이터 + 자막 원문을 합쳐서 LLM에게 전달
+        combined_text = f"""
+        아래는 유튜브 영상의 정보야. 영상 설명과 자막 원문을 분석해서 여행 장소 중심으로 요약해줘.
 
-            [유튜브 영상 설명]
-            {video_detail}
+        [유튜브 영상 제목]
+        {title}
 
-            [유튜브 자막 원문]
-            {transcript_text}
+        [유튜브 영상 설명]
+        {video_detail}
 
-            위 내용을 기반으로 여행 장소 중심으로 요약해줘. 
-            관광지나 상호명이 올바르게 나왔으면 좋겠어. 장소마다 특징을 한 줄로 정리해서 같이 설명해줘. 
-            상호명이 없는 장소는 제외하고 알려줘.
-            """
+        [유튜브 자막 원문]
+        {transcript_text}
 
-            # 기존 요약 함수 그대로 사용
-            final_summary = yt_model.summarize_text_with_gemini(combined_text)
+        위 내용을 기반으로 여행 장소 중심으로 요약해줘. 
+        관광지나 상호명이 올바르게 나왔으면 좋겠어. 장소마다 특징을 한 줄로 정리해서 같이 설명해줘. 
+        상호명이 없는 장소는 제외하고 알려줘.
+        """
 
-            # 최종 요약 출력
-            #print("\n📌 유튜브 영상 최종 요약 📌\n")
-            #print(final_summary)
+        # 기존 요약 함수 그대로 사용
+        final_summary = yt_model.summarize_text_with_gemini(combined_text)
 
-            # 결과를 저장할 딕셔너리 초기화
-            records = []
-            current_category = None
-            id_counter = 1
+        # 최종 요약 출력
+        #print("\n📌 유튜브 영상 최종 요약 📌\n")
+        #print(final_summary)
 
-            # 각 줄을 순회하면서 데이터 파싱
-            for line in final_summary.strip().splitlines():
-                line = line.strip()
-                if not line:
-                    continue
+        # 결과를 저장할 딕셔너리 초기화
+        records = []
+        current_category = None
+        id_counter = 1
 
-                # 카테고리 라인: '!'로 시작
-                if line.startswith("!"):
-                    current_category = line[1:].strip()
-                # 데이터 항목 라인: '@'로 시작하며 '$'로 구분
-                elif line.startswith("@"):
-                    if "$" in line:
-                        parts = line[1:].split("$", 1)
-                        place_name = parts[0].strip()
-                        summary = parts[1].strip()
-                        records.append({
-                            "id": id_counter,
-                            "category": current_category,
-                            "place_name": place_name,
-                            "summary": summary
-                        })
-                        id_counter += 1
+        # 각 줄을 순회하면서 데이터 파싱
+        for line in final_summary.strip().splitlines():
+            line = line.strip()
+            if not line:
+                continue
 
-            # JSON으로 변환 (한글 깨짐 방지)
-            json_data = json.dumps(records, ensure_ascii=False)
-            return json_data
-            # print(json_data)
+            # 카테고리 라인: '!'로 시작
+            if line.startswith("!"):
+                current_category = line[1:].strip()
+            # 데이터 항목 라인: '@'로 시작하며 '$'로 구분
+            elif line.startswith("@"):
+                if "$" in line:
+                    parts = line[1:].split("$", 1)
+                    place_name = parts[0].strip()
+                    summary = parts[1].strip()
+                    records.append({
+                        "id": id_counter,
+                        "category": current_category,
+                        "place_name": place_name,
+                        "summary": summary
+                    })
+                    id_counter += 1
 
+        # JSON으로 변환 (한글 깨짐 방지)
+        json_data = json.dumps(records, ensure_ascii=False)
+        return json_data
+        # print(json_data)
+
+
+class URLRequest(BaseModel):
+    url: str
 
 @app.get("/process-url")
-def process_url(url: str):
-    """
-    GET 요청 쿼리 파라미터로 { "url": "string" } 전달.
-    응답: JSON 배열 - 각 항목 { "id", "category", "place_name", "summary" }
-    """
-    records = process_youtube_url(url)
+async def process_url(payload: URLRequest):
+    records = process_youtube_url(payload.url)
     return records
 
+
+
+
+
+# 입력 JSON의 places 요소를 위한 Pydantic 모델
+class Place(BaseModel):
+    id: int
+    category: str
+    place_name: str
+    summary: str
+    latitude: float
+    longitude: float
+
+# 전체 요청 JSON 데이터를 위한 모델
+class TripData(BaseModel):
+    days: int
+    places: List[Place]
+    
+
+test_json = {
+    "days": 3,
+    "places": [
+      {
+        "id": 1,
+        "category": "음식점",
+        "place_name": "이츠모라멘",
+        "summary": "라멘 맛집",
+        "latitude" : 37.784818013,
+        "longitude" : 128.916060875
+      },
+      {
+        "id": 2,
+        "category": "카페/디저트",
+        "place_name": "초당찰떡",
+        "summary": "찹쌀떡, 구운찰떡 판매, 네이버 예약 가능, 선물용으로 좋음",
+        "latitude": 37.791413406,
+        "longitude": 128.914894149
+      }
+    ]
+}
+
+# GET 요청으로 JSON Body를 받기 위한 엔드포인트
 @app.get("/api/recommend")
-def recommend(url: str):
-    """
-    GET 요청 쿼리 파라미터로 { "url": "string" } 전달.
-    응답: { "days": integer, "places": [ { "id", "category", "place_name", "summary" } ] }
-    여기서는 days 값을 예시로 3으로 설정했습니다.
-    """
-    records = process_youtube_url(url)
-    response = {
-        "days": 3,
-        "places": records
-    }
-    return response
+async def recommend(trip_data: TripData):
+    
+    input_data = trip_data.model_dump()
+
+    # LLM을 통한 초기 일정 생성
+    initial_schedule = trip_model.generate_initial_schedule(input_data)
+
+    # 응답 파싱
+    parsed_schedule = trip_model.parse_llm_schedule(initial_schedule)
+
+    # 거리 기반 경로 최적화 (Place 객체 유지)
+    optimized_schedule = trip_model.optimize_schedule_with_distance(
+        parsed_schedule, trip_data.places  # ✅ Place 객체 그대로 전달
+    )
+
+    # 최종 일정 데이터를 JSON 문자열로 변환 후 반환
+    final_data = trip_model.convert_to_join(optimized_schedule)
+    return final_data
+    
 
 
 
