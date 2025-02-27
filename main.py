@@ -98,10 +98,12 @@ class URLRequest(BaseModel):
     url: str
 
 @app.get("/process-url")
-async def process_url(payload: URLRequest):
-    records = process_youtube_url(payload.url)
+async def process_url(url: str):#payload: URLRequest
+    # records = process_youtube_url(payload.url)
+    # return records
+    records = process_youtube_url(url)
+    print(records)
     return records
-
 
 
 
@@ -123,32 +125,68 @@ class TripData(BaseModel):
 
 # GET 요청으로 JSON Body를 받기 위한 엔드포인트
 @app.get("/api/recommend")
-async def recommend(trip_data: TripData):
-    
-    input_data = trip_data.model_dump()
+async def recommend(days: int, places: str): # trip_data: TripData
+    places_list = json.loads(places)  # ✅ JSON 문자열을 Python 리스트로 변환
 
-    # LLM을 통한 초기 일정 생성
+    # ✅ Place 모델 리스트로 변환 (기존 코드와 동일한 구조 유지)
+    places_objects = [Place(**place) for place in places_list]  # 🔥 해결 핵심
+
+    # ✅ 기존 trip_data와 동일한 구조로 변환
+    input_data = {
+        "days": days,
+        "places": places_objects  # ✅ Place 객체 리스트 전달
+    }
+
+    # ✅ 기존 코드 유지 (trip_model 호출)
     initial_schedule = trip_model.generate_initial_schedule(input_data)
-
-    # 응답 파싱
     parsed_schedule = trip_model.parse_llm_schedule(initial_schedule)
-
-    # 거리 기반 경로 최적화 (Place 객체 유지)
-    optimized_schedule = trip_model.optimize_schedule_with_distance(
-        parsed_schedule, trip_data.places  # ✅ Place 객체 그대로 전달
-    )
-
-    # 최종 일정 데이터를 JSON 문자열로 변환 후 반환
+    optimized_schedule = trip_model.optimize_schedule_with_distance(parsed_schedule, places_objects)
     final_data = trip_model.convert_to_join(optimized_schedule)
-    return final_data
     
+    print(final_data)
+    return final_data  # ✅ 기존 코드와 동일한 결과 반환
+    # input_data = trip_data.model_dump()
 
+    # # LLM을 통한 초기 일정 생성
+    # initial_schedule = trip_model.generate_initial_schedule(input_data)
 
+    # # 응답 파싱
+    # parsed_schedule = trip_model.parse_llm_schedule(initial_schedule)
+
+    # # 거리 기반 경로 최적화 (Place 객체 유지)
+    # optimized_schedule = trip_model.optimize_schedule_with_distance(
+    #     parsed_schedule, trip_data.places  # ✅ Place 객체 그대로 전달
+    # )
+
+    # # 최종 일정 데이터를 JSON 문자열로 변환 후 반환
+    # final_data = trip_model.convert_to_join(optimized_schedule)
+    # return final_data
+
+@app.post("/api/recommend")
+async def recommend_post(body: dict):
+    days = body.get("days")
+    places_list = body.get("places", [])
+    places_objects = [Place(**place) for place in places_list]
+
+    input_data = {
+        "days": days,
+        "places": places_objects
+    }
+
+    initial_schedule = trip_model.generate_initial_schedule(input_data)
+    parsed_schedule = trip_model.parse_llm_schedule(initial_schedule)
+    optimized_schedule = trip_model.optimize_schedule_with_distance(parsed_schedule, places_objects)
+    final_data = trip_model.convert_to_join(optimized_schedule)
+    print(final_data)
+    return json.loads(final_data)
+
+@app.get("/")
+async def root():
+    return {"message": "FastAPI 서버 정상 실행 중!"}
 
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
 
 
 
