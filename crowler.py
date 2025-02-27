@@ -17,7 +17,7 @@ def get_chrome_driver():
 
     # ✅ Ubuntu에서는 직접 설치된 Chromium과 Chromedriver를 사용하도록 설정
     options.binary_location = "/usr/bin/chromium"
-    service = Service("/usr/local/bin/chromedriver-linux64/chromedriver")
+    service = Service("/usr/local/bin/chromedriver")
 
     # ✅ Ubuntu에 맞게 WebDriver 실행
     driver = webdriver.Chrome(service=service, options=options)
