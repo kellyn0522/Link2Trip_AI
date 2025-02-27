@@ -202,3 +202,9 @@ if __name__ == "__main__":
     final_data = convert_to_join(optimized_schedule)
     print(final_data)
 
+    # 확인 출력 
+    # print("[trip_data]\n\n", trip_data)
+    # print("\n\n[initial_schedule]\n\n", initial_schedule)
+    # print("\n\n[parsed_schedule]\n\n", parsed_schedule)
+    # print("\n\n[optimized_schedule]\n\n", optimized_schedule)
+    # print("\n\n[final_data]\n\n", final_data)
