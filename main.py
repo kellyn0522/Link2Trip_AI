@@ -122,28 +122,6 @@ class TripData(BaseModel):
     places: List[Place]
     
 
-test_json = {
-    "days": 3,
-    "places": [
-      {
-        "id": 1,
-        "category": "음식점",
-        "place_name": "이츠모라멘",
-        "summary": "라멘 맛집",
-        "latitude" : 37.784818013,
-        "longitude" : 128.916060875
-      },
-      {
-        "id": 2,
-        "category": "카페/디저트",
-        "place_name": "초당찰떡",
-        "summary": "찹쌀떡, 구운찰떡 판매, 네이버 예약 가능, 선물용으로 좋음",
-        "latitude": 37.791413406,
-        "longitude": 128.914894149
-      }
-    ]
-}
-
 # GET 요청으로 JSON Body를 받기 위한 엔드포인트
 @app.get("/api/recommend")
 async def recommend(days: int, places: str): # trip_data: TripData
