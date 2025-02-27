@@ -3,10 +3,10 @@ name: Build and Deploy Docker Image to EC2
 on:
   push:
     branches:
-      - TC-18
+      - TC-35
   pull_request:
     branches:
-      - TC-18
+      - TC-35
 
 jobs:
   build:
