@@ -57,3 +57,4 @@ class YouTubeModel:
         summary = self.summarize_text_with_gemini(transcript_text)
         return {"summary": summary}
 
+

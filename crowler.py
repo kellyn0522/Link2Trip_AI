@@ -6,21 +6,49 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
+import subprocess
 import time
+import os
 
-# 🚀 Selenium WebDriver 설정
+# Chrome 및 ChromeDriver 버전 자동 맞추기
+def get_chrome_driver():
+    # MacOS용 Chrome 실행 경로
+    chrome_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    
+    # 현재 Chrome 버전 확인 (MacOS용)
+    try:
+        chrome_version = subprocess.run([chrome_path, "--version"], capture_output=True, text=True).stdout.strip()
+    except FileNotFoundError:
+        print("❌ Google Chrome이 설치되지 않았거나 경로를 찾을 수 없습니다.")
+        print("🔹 Chrome이 설치되어 있는지 확인하고, '/Applications/Google Chrome.app'에 있는지 확인하세요.")
+        exit(1)
+
+    print(f"🌐 현재 Chrome 버전: {chrome_version}")
+
+    # Chrome 옵션 설정 (MacOS에서 실행 가능하도록)
+    options = Options()
+    options.binary_location = chrome_path  # MacOS에서 Chrome 실행 경로 지정
+    options.add_argument("--headless")  # 브라우저 창 숨기기 (클라우드 배포 시 필수)
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--remote-debugging-port=9222")
+
+    # ChromeDriverManager를 사용하여 Chrome 버전에 맞는 드라이버 설치
+    driver_path = ChromeDriverManager().install()
+    return webdriver.Chrome(service=Service(driver_path), options=options)
+
+'''
+# Selenium WebDriver 설정
 options = Options()
 options.add_argument("--headless")  # 배포 시 활성화 (개발 시 주석 처리)
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
+'''
 
-
-# 유튜브 URL 설정
-# YOUTUBE_URL = "https://www.youtube.com/watch?v=R4AlFMAgDz0"
-
-# 🎯 유튜브 데이터 크롤링 함수
+# 유튜브 데이터 크롤링 함수
 def get_youtube_data(video_url):
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = get_chrome_driver() # webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     wait = WebDriverWait(driver, 15)
 
     try : 
@@ -50,46 +78,14 @@ def get_youtube_data(video_url):
             video_detail = video_detail_element.text
         except:
             video_detail = "설명 없음"
-
-        # # ✅ 3. 댓글 가져오기
-        # # 댓글이 포함된 iframe이 로드될 때까지 대기
-        # WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-
-        # # 스크롤을 내려 댓글을 로드하는 함수
-        # def scroll_to_load_comments(scroll_count=1, wait_time=1):
-        #     body = driver.find_element(By.TAG_NAME, "body")
             
-        #     for _ in range(scroll_count):
-        #         body.send_keys(Keys.PAGE_DOWN)  # 페이지 다운 키 입력
-        #         time.sleep(wait_time)  # 스크롤 후 대기 (로딩 기다림)
-            
-        #     time.sleep(2)  # 추가 대기 (완전한 로딩을 위해)
-
-        # # 댓글을 불러오기 위해 스크롤 수행
-        # scroll_to_load_comments()
-
-        # # 댓글 요소 가져오기
-        # comments = []
-        # elements = driver.find_elements(By.CSS_SELECTOR, "span.yt-core-attributed-string.yt-core-attributed-string--white-space-pre-wrap")
-
-        # # 댓글 개수 확인 후 12번째 댓글 출력
-        # if len(elements) > 11:
-        #     twelfth_comment = elements[11].text
-        #     print(f"12번째 댓글: {twelfth_comment}")
-        # else:
-        #     print("❌ 댓글 개수가 충분하지 않음.")
-
-        # # 요소 내용 저장
-        # for element in elements:
-        #     comments.append(element.text)
-
         return {
             "title": title,
             "video_detail": video_detail,
-            #"comments": comments
         }
     finally:
         driver.quit()
+
 
 # # 실행
 # youtube_data = get_youtube_data(YOUTUBE_URL)
@@ -106,3 +102,4 @@ def get_youtube_data(video_url):
 
 # # 드라이버 종료
 # driver.quit()
+
