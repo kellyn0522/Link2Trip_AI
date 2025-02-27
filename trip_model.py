@@ -4,16 +4,19 @@ import google.generativeai as genai
 from math import radians, sin, cos, sqrt, atan2
 from itertools import permutations
 
+
 # Gemini API 설정
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-pro")
+
 
 # JSON 파일 불러오기
 def load_trip_data(filename="trip_data.json"):
     with open(filename, "r", encoding="utf-8") as file:
         data = json.load(file)
     return data
+
 
 # Haversine 공식: 두 위도/경도 좌표 간 거리 계산 (단위: km)
 def haversine(lat1, lon1, lat2, lon2):
@@ -143,6 +146,33 @@ def optimize_schedule_with_distance(parsed_schedule, places):
 
     return optimized_schedule
 
+
+# json 형식으로 바꿈 
+def convert_to_join(schedule_list):
+    records = []
+    day_counter = {}
+
+    for entry in schedule_list:
+        day = entry["day"]
+
+        if day not in day_counter:
+            day_counter[day] = 1
+        else : 
+            day_counter[day] += 1
+
+        records.append({
+            "day" : day,
+            "sort" : day_counter[day],
+            "place_name" : entry["place_name"],
+            "summary" : entry["summary"]
+        })
+
+    json_data = json.dumps(records, ensure_ascii=False, indent=4)
+
+    return json_data
+
+
+'''
 # 최적화된 일정 출력
 def print_schedule(schedule):
     print("\n📌 [최적화된 여행 일정] 📌\n")
@@ -150,20 +180,25 @@ def print_schedule(schedule):
     print("-" * 50)
     for entry in schedule:
         print(f"{entry['day']} | {entry['time']} | {entry['place_name']} | {entry['summary']}")
+'''
 
 # 실행
 if __name__ == "__main__":
     trip_data = load_trip_data()
 
-    # LLM을 이용해 기본 여행 일정 추천
+    # 기본 여행 일정 추천
     initial_schedule = generate_initial_schedule(trip_data)
 
-    # LLM 응답에서 헤더 제거 및 데이터 정리
+    # LLM 응답에서 헤더 제거 & 데이터 정리
     parsed_schedule = parse_llm_schedule(initial_schedule)
 
     # 거리 기반 최적화 알고리즘 적용
     optimized_schedule = optimize_schedule_with_distance(parsed_schedule, trip_data["places"])
 
     # 최적화된 일정 출력
-    print_schedule(optimized_schedule)
+    # print_schedule(optimized_schedule)
+    
+    # json 형식 데이터 출력
+    final_data = convert_to_join(optimized_schedule)
+    print(final_data)
 
