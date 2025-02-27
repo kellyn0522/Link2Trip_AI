@@ -1,53 +1,136 @@
+# 이후에 다른 라이브러리들을 임포트합니다.
+import json
+import re
+import google.generativeai as genai
+from pydantic import BaseModel
 from youtube_model import YouTubeModel
 from crowler import get_youtube_data
+from fastapi import FastAPI, HTTPException
+
+app = FastAPI()
 
 # 유튜브 URL 입력
-youtube_url = input("유튜브 URL을 입력하세요: ")
+# youtube_url = input("유튜브 URL을 입력하세요: ")
 
-# Selenium으로 유튜브 데이터 가져오기
-youtube_data = get_youtube_data(youtube_url)
-title = youtube_data.get("title", "제목 없음")
-video_detail = youtube_data.get("video_detail", "설명 없음")
+class UrlRequest(BaseModel):
+    url: str
 
-print(f"\n📌 영상 제목: {youtube_data['title']}")
-# print(f"📝 설명: {youtube_data['video_detail']}\n\n")
+def process_youtube_url(youtube_url: str):
 
-# Gemini API를 이용한 영상 요약
-yt_model = YouTubeModel()   # 클래스 호출 
-video_id = yt_model.get_video_id(youtube_url)
+    # Selenium으로 유튜브 데이터 가져오기
+    youtube_data = get_youtube_data(youtube_url)
+    title = youtube_data.get("title", "제목 없음")
+    video_detail = youtube_data.get("video_detail", "설명 없음")
 
-if not video_id:
-    print("❌ 올바른 유튜브 URL을 입력하세요.")
-else:
-    transcript_text = yt_model.get_youtube_transcript(video_id)
+    # print(f"\n📌 영상 제목: {youtube_data['title']}")
+    # print(f"📝 설명: {youtube_data['video_detail']}\n\n")
 
-    if "자막을 가져오는 데 실패했습니다" in transcript_text:
-        print(f"❌ 오류: {transcript_text}")
+    # Gemini API를 이용한 영상 요약
+    yt_model = YouTubeModel()   # 클래스 호출 
+    video_id = yt_model.get_video_id(youtube_url) 
+
+    if not video_id:
+        print("❌ 올바른 유튜브 URL을 입력하세요.")
     else:
-        # 크롤링 데이터 + 자막 원문을 합쳐서 LLM에게 전달
-        combined_text = f"""
-        아래는 유튜브 영상의 정보야. 영상 설명과 자막 원문을 분석해서 여행 장소 중심으로 요약해줘.
+        transcript_text = yt_model.get_youtube_transcript(video_id)
 
-        [유튜브 영상 제목]
-        {title}
+        if "자막을 가져오는 데 실패했습니다" in transcript_text:
+            print(f"❌ 오류: {transcript_text}")
+        else:
+            # 크롤링 데이터 + 자막 원문을 합쳐서 LLM에게 전달
+            combined_text = f"""
+            아래는 유튜브 영상의 정보야. 영상 설명과 자막 원문을 분석해서 여행 장소 중심으로 요약해줘.
 
-        [유튜브 영상 설명]
-        {video_detail}
+            [유튜브 영상 제목]
+            {title}
 
-        [유튜브 자막 원문]
-        {transcript_text}
+            [유튜브 영상 설명]
+            {video_detail}
 
-        위 내용을 기반으로 여행 장소 중심으로 요약해줘. 
-        관광지나 상호명이 올바르게 나왔으면 좋겠어. 장소마다 특징을 한 줄로 정리해서 같이 설명해줘. 
-        상호명이 없는 장소는 제외하고 알려줘.
-        """
+            [유튜브 자막 원문]
+            {transcript_text}
 
-        # 기존 요약 함수 그대로 사용
-        final_summary = yt_model.summarize_text_with_gemini(combined_text)
+            위 내용을 기반으로 여행 장소 중심으로 요약해줘. 
+            관광지나 상호명이 올바르게 나왔으면 좋겠어. 장소마다 특징을 한 줄로 정리해서 같이 설명해줘. 
+            상호명이 없는 장소는 제외하고 알려줘.
+            """
 
-        # 최종 요약 출력
-        print("\n📌 유튜브 영상 최종 요약 📌\n")
-        print(final_summary)
+            # 기존 요약 함수 그대로 사용
+            final_summary = yt_model.summarize_text_with_gemini(combined_text)
+
+            # 최종 요약 출력
+            #print("\n📌 유튜브 영상 최종 요약 📌\n")
+            #print(final_summary)
+
+            # 결과를 저장할 딕셔너리 초기화
+            records = []
+            current_category = None
+            id_counter = 1
+
+            # 각 줄을 순회하면서 데이터 파싱
+            for line in final_summary.strip().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+
+                # 카테고리 라인: '!'로 시작
+                if line.startswith("!"):
+                    current_category = line[1:].strip()
+                # 데이터 항목 라인: '@'로 시작하며 '$'로 구분
+                elif line.startswith("@"):
+                    if "$" in line:
+                        parts = line[1:].split("$", 1)
+                        place_name = parts[0].strip()
+                        summary = parts[1].strip()
+                        records.append({
+                            "id": id_counter,
+                            "category": current_category,
+                            "place_name": place_name,
+                            "summary": summary
+                        })
+                        id_counter += 1
+
+            # JSON으로 변환 (한글 깨짐 방지)
+            json_data = json.dumps(records, ensure_ascii=False)
+            return json_data
+            # print(json_data)
+
+
+@app.get("/process-url")
+def process_url(url: str):
+    """
+    GET 요청 쿼리 파라미터로 { "url": "string" } 전달.
+    응답: JSON 배열 - 각 항목 { "id", "category", "place_name", "summary" }
+    """
+    records = process_youtube_url(url)
+    return records
+
+@app.get("/api/recommend")
+def recommend(url: str):
+    """
+    GET 요청 쿼리 파라미터로 { "url": "string" } 전달.
+    응답: { "days": integer, "places": [ { "id", "category", "place_name", "summary" } ] }
+    여기서는 days 값을 예시로 3으로 설정했습니다.
+    """
+    records = process_youtube_url(url)
+    response = {
+        "days": 3,
+        "places": records
+    }
+    return response
+
+
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+
+
+
+
+
+
 
 
 # # 결과 출력
