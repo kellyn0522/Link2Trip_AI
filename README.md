@@ -82,7 +82,7 @@ Gen AI (LLM) | `OpenAI API`, `Gemini API`
 
 ## 👉🏻 Service Architecture
 
-<img width="550" alt="image (7)" src="https://github.com/user-attachments/assets/1b71398f-5640-4b68-9109-7989b87092b6" />
+<img width="650" alt="image (7)" src="https://github.com/user-attachments/assets/1b71398f-5640-4b68-9109-7989b87092b6" />
 
 
 <br>
