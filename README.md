@@ -6,7 +6,7 @@
 
 ## 📌 Quick View
 
-
+### [영상 바로가기](https://drive.google.com/drive/u/0/folders/1byXzFXQQNu93PFPYC_pnsUTp2z4BwHLU)
 
 <br>
 
