@@ -6,8 +6,16 @@
 
 ## 📌 Quick View
 
-### [영상 바로가기](https://drive.google.com/drive/u/0/folders/1byXzFXQQNu93PFPYC_pnsUTp2z4BwHLU)
+### [영상 바로가기](https://drive.google.com/file/d/1cmvoUELATlYIlPEgOOLH57aSQhqkXoZF/view?usp=sharing)
 
+<img src="https://github.com/user-attachments/assets/509a0bd7-b3c0-424b-a79b-7778e92283b9" width="430">
+
+<img src="https://github.com/user-attachments/assets/f3cc0ee2-2d9b-4f96-9035-94d2fac1fb47" width="430">
+
+- 가고싶은 여행지가 나온 유튜브 URL 입력
+- LLM을 통한 장소 추출 -> 사용자 선택 -> 거리 기반 추천 
+
+<br>
 <br>
 
 ## ⚒️ Usage Stack
